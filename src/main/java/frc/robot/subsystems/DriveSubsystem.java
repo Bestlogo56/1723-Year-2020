@@ -82,8 +82,8 @@ public class DriveSubsystem extends SubsystemBase {
     if(forward <= 0.01) {
       forward = 0.0;
     }
-
-    double throttle = forward - reverse;
+    
+    double throttle = (forward - reverse)*-1;
 
     rotation = rotation * Constants.turnSensitivity;
     //calculate differentials with variables for two sides of robot drive train
@@ -102,11 +102,6 @@ public class DriveSubsystem extends SubsystemBase {
     }
     else if(leftSidePercentage <= -1) {
       leftSidePercentage = -1;
-    }
-
-    if(leftEncoder.getVelocity() >= 1000 || leftEncoder.getVelocity() <= -1000) {
-      //System.out.println(throttle);
-      System.out.println(leftEncoder.getVelocity());
     }
 
     leftPIDController.setReference(leftSidePercentage*Constants.maxVelocity, ControlType.kVelocity);

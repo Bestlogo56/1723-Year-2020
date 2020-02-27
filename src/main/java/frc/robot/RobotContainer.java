@@ -8,13 +8,46 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
+import frc.robot.commands.AimShootCommand;
+import frc.robot.commands.ClimbCommand;
 import frc.robot.commands.ExampleCommand;
-import frc.robot.commands.TeleopDrive;
 import frc.robot.subsystems.ExampleSubsystem;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj.XboxController.Button;
+
+import frc.robot.commands.TeleopDrive;
 import frc.robot.subsystems.DriveSubsystem;
+
+import frc.robot.commands.TurretCommand;
+import frc.robot.subsystems.TurretSubsystem;
+
+import frc.robot.commands.SpinUpShooterCommand;
+import frc.robot.subsystems.FlyWheelSubsystem;
+
+import frc.robot.subsystems.HoodSubsystem;
+import frc.robot.commands.FirstHoodPneumatic;
+import frc.robot.commands.SecondHoodPneumatic;
+
+import frc.robot.subsystems.TransportSubsystem;
+import frc.robot.commands.TransportCommand;
+import frc.robot.commands.ReverseTransportCommand;
+
+import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.commands.IntakeCommand;
+import frc.robot.commands.OuttakeCommand;
+
+import frc.robot.commands.ClimbCommand;
+import frc.robot.subsystems.ClimbSubsystem;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import frc.robot.commands.ControlPanelWheelCommand;
+import frc.robot.subsystems.ControlPanelSubsystem;
+
 import frc.robot.Constants;
 
 /**
@@ -24,15 +57,27 @@ import frc.robot.Constants;
  * (including subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
+  private final XboxController clearController = new XboxController(Constants.clearControllerPort);
+  private final XboxController bigBlackController = new XboxController(Constants.bigBlackControllerPort);
+
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-  private final DriveSubsystem drive = new DriveSubsystem();
-
   private final ExampleCommand m_autoCommand = new ExampleCommand(m_exampleSubsystem);
 
+  private final TurretSubsystem turretSubsystem = new TurretSubsystem();
+  private final FlyWheelSubsystem flyWheelSubsystem = new FlyWheelSubsystem();
 
-  private final Joystick joy = new Joystick(Constants.joyPort);
-  
+  private final TransportSubsystem TransportSubsystem = new TransportSubsystem();
+
+  private final DriveSubsystem drive = new DriveSubsystem();
+
+  private final IntakeSubsystem IntakeSubsystem = new IntakeSubsystem();
+
+  private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
+
+  private final ClimbSubsystem climb = new ClimbSubsystem();
+
+  private final ControlPanelSubsystem controlPanelSubsystem = new ControlPanelSubsystem();
 
   /**
    * The container for the robot.  Contains subsystems, OI devices, and commands.
@@ -40,11 +85,22 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the button bindings
     configureButtonBindings();
+    climb.setDefaultCommand(new ClimbCommand(climb,
+      () -> bigBlackController.getY(Hand.kLeft),
+      () -> bigBlackController.getX(Hand.kLeft) ));
 
+    //turretSubsystem.setDefaultCommand(new TurretCommand(turretSubsystem));
+    /*
+    flyWheelSubsystem.setDefaultCommand(new SpinUpShooterCommand(flyWheelSubsystem,
+      () -> bigBlackController.getRawButton(1),
+      () -> bigBlackController.getRawButton(2)));
+    */
     drive.setDefaultCommand(new TeleopDrive(drive,
-      () -> joy.getRawAxis(3),
-      () -> joy.getRawAxis(2),
-      () -> joy.getRawAxis(0)));
+      () -> clearController.getRawAxis(3),
+      () -> clearController.getRawAxis(2),
+      () -> clearController.getRawAxis(0)));
+
+    SmartDashboard.putNumber("Flywheel velocity", flyWheelSubsystem.getWheelVelocity());
   }
 
   /**
@@ -54,7 +110,23 @@ public class RobotContainer {
    * {@link edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    
+    new JoystickButton(bigBlackController, Button.kA.value).whenHeld(new AimShootCommand(TransportSubsystem,flyWheelSubsystem,turretSubsystem));
+
+    new JoystickButton(bigBlackController, Button.kBumperLeft.value).whenHeld(new FirstHoodPneumatic(hoodSubsystem));
+    new JoystickButton(bigBlackController, Button.kBumperRight.value).whenHeld(new SecondHoodPneumatic(hoodSubsystem));
+
+    new JoystickButton(bigBlackController, Button.kB.value).whenHeld(new ControlPanelWheelCommand(controlPanelSubsystem));
+
+    if (!bigBlackController.getStickButton(Hand.kLeft)){
+      new JoystickButton(bigBlackController, Button.kY.value).whenHeld(new TransportCommand(TransportSubsystem));
+      System.out.println("forward");
+      new JoystickButton(bigBlackController, Button.kX.value).whenHeld(new IntakeCommand(IntakeSubsystem));
+    }
+    else {
+      new JoystickButton(bigBlackController, Button.kY.value).whenHeld(new ReverseTransportCommand(TransportSubsystem));
+      System.out.println("backwards");
+      new JoystickButton(bigBlackController, Button.kX.value).whenHeld(new OuttakeCommand(IntakeSubsystem));
+    }
   }
 
 
